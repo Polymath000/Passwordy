@@ -1,22 +1,46 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 void main() {
-  runApp(const PasswordGenerator());
+  runApp(PasswordGenerator());
 }
 
 class PasswordGenerator extends StatefulWidget {
-  const PasswordGenerator({super.key});
-
+  PasswordGenerator({super.key});
+  bool _includeUppercase = false;
+  bool _includeNumbers = false;
+  bool _includeSymbols = false;
+  int _passwordLength = 10;
+  String _password = 'Your Password Will Show Here';
   @override
   State<PasswordGenerator> createState() => _PasswordGeneratorState();
 }
 
 class _PasswordGeneratorState extends State<PasswordGenerator> {
-  bool _includeUppercase = false;
-  bool _includeNumbers = false;
-  bool _includeSymbols = false;
-  int _passwordLength = 10;
+  final TextEditingController _controller = TextEditingController();
+  void _generatePassword() {
+    final random = Random();
+    String characters = 'abcdefghijklmnopqrstuvwxyz';
+    if (widget._includeNumbers) {
+      characters += '0123456789';
+    }
+    if (widget._includeSymbols) {
+      characters += '!@#\$%^&*()_-+';
+    }
+    if (widget._includeUppercase) {
+      characters += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    }
+    String password = '';
+    for (int i = 0; i < widget._passwordLength; i++) {
+      password += characters[random.nextInt(characters.length)];
+    }
+    setState(() {
+      widget._password = password;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -35,15 +59,23 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 25.0),
                     child: TextField(
-                      enabled: false,
+                      controller: _controller,
+                      enabled: true,
                       decoration: InputDecoration(
                         suffixIcon: IconButton(
-                            onPressed: () {},
-                            icon: const Icon(
-                              Icons.copy,
-                              color: Colors.amber,
-                            )),
-                        labelText: 'Your password will appear here',
+                          onPressed: () async {
+                            if (widget._password !=
+                                'Your Password Will Show Here') {
+                              await Clipboard.setData(
+                                  ClipboardData(text: widget._password));
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.copy,
+                            color: Colors.amber,
+                          ),
+                        ),
+                        labelText: widget._password,
                         labelStyle: const TextStyle(color: Colors.black),
                         border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(
@@ -66,23 +98,21 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
                               style: TextStyle(fontSize: 16),
                             ),
                             DropdownButton<int>(
-                              value: _passwordLength,
-                              items: List.generate(20, (index) {
-                                _passwordLength = index + 1;
+                              value: widget._passwordLength,
+                              items: List.generate(23, (index) {
                                 return DropdownMenuItem<int>(
-                                  onTap: () {
-                                    setState(() {
-                                      _passwordLength = index + 1;
-                                    });
-                                  },
-                                  value: index + 1,
+                                  value: index + 8,
                                   child: Text(
-                                    '${index + 1}',
+                                    '${index + 8}',
                                     style: const TextStyle(color: Colors.blue),
                                   ),
                                 );
                               }),
-                              onChanged: (value) {},
+                              onChanged: (value) {
+                                setState(() {
+                                  widget._passwordLength = value!;
+                                });
+                              },
                             ),
                           ],
                         ),
@@ -95,10 +125,10 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
                               style: TextStyle(fontSize: 16),
                             ),
                             Checkbox(
-                              value: _includeUppercase,
+                              value: widget._includeUppercase,
                               onChanged: (value) {
                                 setState(() {
-                                  _includeUppercase = value!;
+                                  widget._includeUppercase = value!;
                                 });
                               },
                             ),
@@ -113,10 +143,10 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
                               style: TextStyle(fontSize: 16),
                             ),
                             Checkbox(
-                              value: _includeNumbers,
+                              value: widget._includeNumbers,
                               onChanged: (value) {
                                 setState(() {
-                                  _includeNumbers = value!;
+                                  widget._includeNumbers = value!;
                                 });
                               },
                             ),
@@ -127,14 +157,14 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const Text(
-                              'Allow Symbols (!@#\$%^&*()+):',
+                              'Allow Symbols (!@#\$%^&*()_-+):',
                               style: TextStyle(fontSize: 16),
                             ),
                             Checkbox(
-                              value: _includeSymbols,
+                              value: widget._includeSymbols,
                               onChanged: (value) {
                                 setState(() {
-                                  _includeSymbols = value!;
+                                  widget._includeSymbols = value!;
                                 });
                               },
                             ),
@@ -146,7 +176,9 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 25.0),
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        _generatePassword();
+                      },
                       child: const Text(
                         'Generate Password',
                         style: TextStyle(color: Color.fromARGB(255, 2, 66, 98)),
@@ -159,6 +191,27 @@ class _PasswordGeneratorState extends State<PasswordGenerator> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class checkBox extends StatefulWidget {
+  checkBox({super.key, this.include = false});
+  bool include;
+  @override
+  State<checkBox> createState() => _checkBoxState();
+}
+
+class _checkBoxState extends State<checkBox> {
+  @override
+  Widget build(BuildContext context) {
+    return Checkbox(
+      value: widget.include,
+      onChanged: (value) {
+        setState(() {
+          widget.include = value!;
+        });
+      },
     );
   }
 }
@@ -188,68 +241,3 @@ class AppBar extends StatelessWidget {
     );
   }
 }
-
-// class MyApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//         theme: ThemeData(
-//           primarySwatch: Colors.green,
-//         ),
-//         debugShowCheckedModeBanner: false,
-//         home: PasswordGenerator());
-//   }
-// }
-
-// class PasswordGenerator extends StatefulWidget {
-//   @override
-//   _PasswordGeneratorState createState() => _PasswordGeneratorState();
-// }
-
-// class _PasswordGeneratorState extends State<PasswordGenerator> {
-//   String _password = '';
-//   void _generatePassword() {
-//     final random = Random();
-//     final characters =
-//         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()_+';
-//     String password = '';
-//     for (int i = 0; i < 12; i++) {
-//       password += characters[
-//           random.nextInt(characters.length)];
-//     }
-//     setState(() {
-//       _password = password;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Password Generator'),
-//       ),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             const Text(
-//               'Your Password:',
-//               style: TextStyle(fontSize: 18),
-//             ),
-//             Text(
-
-//               _password,
-//               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(height: 20), // Vertical spacing
-//             ElevatedButton(
-//               onPressed:
-//                   _generatePassword, // Call _generatePassword when button is pressed
-//               child: Text('Generate Password'), // Button text
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
